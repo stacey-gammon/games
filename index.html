@@ -1,1 +1,113 @@
 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Game Collection</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        h1 {
+            color: #2c3e50;
+        }
+        .game-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+        .game-card {
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            transition: transform 0.3s ease;
+        }
+        .game-card:hover {
+            transform: translateY(-5px);
+        }
+        .game-title {
+            color: #3498db;
+            margin-top: 0;
+        }
+        .game-prompt {
+            font-style: italic;
+            color: #7f8c8d;
+            margin-bottom: 15px;
+        }
+        .game-link {
+            display: inline-block;
+            background-color: #3498db;
+            color: #fff;
+            text-decoration: none;
+            padding: 8px 15px;
+            border-radius: 4px;
+            transition: background-color 0.3s ease;
+        }
+        .game-link:hover {
+            background-color: #2980b9;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>My Game Collection</h1>
+    </header>
+    <main class="game-list" id="gameList">
+        <!-- Game cards will be dynamically inserted here -->
+    </main>
+
+    <script>
+        const games = [
+            {
+                title: "Find the Color Difference",
+                prompt: "Built by Fiona",
+                link: "./find_color_diff.html"
+            },
+            {
+                title: "Game 2",
+                prompt: "Design a space exploration adventure",
+                link: "#game2"
+            },
+            {
+                title: "Game 3",
+                prompt: "Develop a time-management simulation",
+                link: "#game3"
+            },
+            {
+                title: "Game 4",
+                prompt: "Build a multiplayer strategy game",
+                link: "#game4"
+            }
+        ];
+
+        function createGameCard(game) {
+            return `
+                <div class="game-card">
+                    <h2 class="game-title">${game.title}</h2>
+                    <p class="game-prompt">"${game.prompt}"</p>
+                    <a href="${game.link}" class="game-link">Play Now</a>
+                </div>
+            `;
+        }
+
+        function renderGames() {
+            const gameList = document.getElementById('gameList');
+            gameList.innerHTML = games.map(createGameCard).join('');
+        }
+
+        renderGames();
+    </script>
+</body>
+</html>
