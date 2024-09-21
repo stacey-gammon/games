@@ -12,38 +12,53 @@
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            height: 100vh;
+            min-height: 100vh;
             background-color: #f0f0f0;
             touch-action: none;
+            overflow: hidden;
+        }
+        #gameContainer {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            max-width: 500px;
+            height: 100vh;
+            padding: 10px;
+            box-sizing: border-box;
         }
         #gameCanvas {
             border: 2px solid #333;
+            max-width: 100%;
+            max-height: 70vh;
         }
         #controls {
             display: flex;
             justify-content: space-around;
             width: 100%;
-            max-width: 300px;
             margin-top: 20px;
         }
         .control-btn {
             font-size: 24px;
-            padding: 10px 20px;
+            padding: 10px;
             background-color: #4CAF50;
             color: white;
             border: none;
             border-radius: 5px;
             cursor: pointer;
+            touch-action: manipulation;
         }
     </style>
 </head>
 <body>
-    <canvas id="gameCanvas"></canvas>
-    <div id="controls">
-        <button class="control-btn" id="leftBtn">←</button>
-        <button class="control-btn" id="rotateBtn">↻</button>
-        <button class="control-btn" id="rightBtn">→</button>
-        <button class="control-btn" id="downBtn">↓</button>
+    <div id="gameContainer">
+        <canvas id="gameCanvas"></canvas>
+        <div id="controls">
+            <button class="control-btn" id="leftBtn">←</button>
+            <button class="control-btn" id="rotateBtn">↻</button>
+            <button class="control-btn" id="rightBtn">→</button>
+            <button class="control-btn" id="downBtn">↓</button>
+        </div>
     </div>
     <script>
         const canvas = document.getElementById('gameCanvas');
@@ -51,10 +66,24 @@
 
         const COLS = 10;
         const ROWS = 20;
-        const BLOCK_SIZE = 30;
+        let BLOCK_SIZE;
 
-        canvas.width = COLS * BLOCK_SIZE;
-        canvas.height = ROWS * BLOCK_SIZE;
+        function resizeGame() {
+            const gameContainer = document.getElementById('gameContainer');
+            const containerWidth = gameContainer.clientWidth;
+            const containerHeight = gameContainer.clientHeight;
+            
+            const maxWidth = containerWidth - 20; // Subtract padding
+            const maxHeight = containerHeight * 0.7; // 70% of container height
+            
+            BLOCK_SIZE = Math.floor(Math.min(maxWidth / COLS, maxHeight / ROWS));
+            
+            canvas.width = COLS * BLOCK_SIZE;
+            canvas.height = ROWS * BLOCK_SIZE;
+        }
+
+        window.addEventListener('resize', resizeGame);
+        resizeGame();
 
         const SHAPES = [
             [[1, 1, 1, 1]],
