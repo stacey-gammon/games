@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Emoji Memory Game</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #e6f2ff;
+        }
+        .game-container {
+            text-align: center;
+        }
+        .game-board {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-top: 20px;
+            background-color: #fff9e6;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        .card {
+            width: 80px;
+            height: 80px;
+            background-color: #ffeb99;
+            border: none;
+            border-radius: 5px;
+            font-size: 2em;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        .card:hover {
+            background-color: #ffe066;
+        }
+        .card.flipped {
+            background-color: #b3d9ff;
+        }
+        .status {
+            margin-top: 20px;
+            font-size: 1.2em;
+        }
+        .new-game {
+            margin-top: 20px;
+            padding: 10px 20px;
+            font-size: 1em;
+            background-color: #4da6ff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        .new-game:hover {
+            background-color: #1a8cff;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1>Emoji Memory Game</h1>
+        <div id="currentPlayer" class="status"></div>
+        <div class="game-board" id="gameBoard"></div>
+        <div id="scores" class="status"></div>
+        <button class="new-game" id="newGame">New Game</button>
+    </div>
+
+    <script>
+        const emojis = ['😀', '😎', '🥳', '🤖', '👽', '🐶', '🐱', '🦄'];
+        let cards = [];
+        let flipped = [];
+        let solved = [];
+        let currentPlayer = 1;
+        let scores = { 1: 0, 2: 0 };
+
+        function initializeGame() {
+            const gameBoard = document.getElementById('gameBoard');
+            gameBoard.innerHTML = '';
+            cards = [...emojis, ...emojis]
+                .sort(() => Math.random() - 0.5)
+                .map((emoji, index) => ({ id: index, emoji }));
+            flipped = [];
+            solved = [];
+            currentPlayer = 1;
+            scores = { 1: 0, 2: 0 };
+
+            cards.forEach(card => {
+                const cardElement = document.createElement('button');
+                cardElement.className = 'card';
+                cardElement.dataset.id = card.id;
+                cardElement.textContent = '?';
+                cardElement.addEventListener('click', () => handleCardClick(card.id));
+                gameBoard.appendChild(cardElement);
+            });
+
+            updateStatus();
+        }
+
+        function handleCardClick(id) {
+            if (flipped.length === 2 || flipped.includes(id) || solved.includes(id)) return;
+
+            const newFlipped = [...flipped, id];
+            flipped = newFlipped;
+
+            updateCardDisplay();
+
+            if (newFlipped.length === 2) {
+                const [first, second] = newFlipped.map(id => cards.find(card => card.id === id));
+                if (first.emoji === second.emoji) {
+                    solved = [...solved, ...newFlipped];
+                    scores[currentPlayer]++;
+                    flipped = [];
+                    updateStatus();
+                } else {
+                    setTimeout(() => {
+                        flipped = [];
+                        currentPlayer = currentPlayer === 1 ? 2 : 1;
+                        updateCardDisplay();
+                        updateStatus();
+                    }, 1000);
+                }
+            }
+        }
+
+        function updateCardDisplay() {
+            cards.forEach(card => {
+                const cardElement = document.querySelector(`[data-id="${card.id}"]`);
+                if (flipped.includes(card.id) || solved.includes(card.id)) {
+                    cardElement.textContent = card.emoji;
+                    cardElement.classList.add('flipped');
+                } else {
+                    cardElement.textContent = '?';
+                    cardElement.classList.remove('flipped');
+                }
+            });
+        }
+
+        function updateStatus() {
+            document.getElementById('currentPlayer').textContent = `Player ${currentPlayer}'s Turn`;
+            document.getElementById('scores').textContent = `Player 1: ${scores[1]} | Player 2: ${scores[2]}`;
+        }
+
+        document.getElementById('newGame').addEventListener('click', initializeGame);
+
+        initializeGame();
+    </script>
+</body>
+</html>
