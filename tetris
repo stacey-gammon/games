@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Touch Tetris</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f0f0f0;
+            touch-action: none;
+        }
+        #gameCanvas {
+            border: 2px solid #333;
+        }
+        #controls {
+            display: flex;
+            justify-content: space-around;
+            width: 100%;
+            max-width: 300px;
+            margin-top: 20px;
+        }
+        .control-btn {
+            font-size: 24px;
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas"></canvas>
+    <div id="controls">
+        <button class="control-btn" id="leftBtn">←</button>
+        <button class="control-btn" id="rotateBtn">↻</button>
+        <button class="control-btn" id="rightBtn">→</button>
+        <button class="control-btn" id="downBtn">↓</button>
+    </div>
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        const COLS = 10;
+        const ROWS = 20;
+        const BLOCK_SIZE = 30;
+
+        canvas.width = COLS * BLOCK_SIZE;
+        canvas.height = ROWS * BLOCK_SIZE;
+
+        const SHAPES = [
+            [[1, 1, 1, 1]],
+            [[1, 1], [1, 1]],
+            [[1, 1, 1], [0, 1, 0]],
+            [[1, 1, 1], [1, 0, 0]],
+            [[1, 1, 1], [0, 0, 1]],
+            [[1, 1, 0], [0, 1, 1]],
+            [[0, 1, 1], [1, 1, 0]]
+        ];
+
+        const COLORS = [
+            '#FF0D72', '#0DC2FF', '#0DFF72',
+            '#F538FF', '#FF8E0D', '#FFE138', '#3877FF'
+        ];
+
+        let board = Array(ROWS).fill().map(() => Array(COLS).fill(0));
+        let currentPiece = null;
+        let currentPosition = { x: 0, y: 0 };
+
+        function createPiece() {
+            const shapeIndex = Math.floor(Math.random() * SHAPES.length);
+            const color = COLORS[shapeIndex];
+            const shape = SHAPES[shapeIndex];
+            return { shape, color };
+        }
+
+        function drawBlock(x, y, color) {
+            ctx.fillStyle = color;
+            ctx.fillRect(x * BLOCK_SIZE, y * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE);
+            ctx.strokeStyle = 'black';
+            ctx.strokeRect(x * BLOCK_SIZE, y * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE);
+        }
+
+        function drawBoard() {
+            board.forEach((row, y) => {
+                row.forEach((value, x) => {
+                    if (value) {
+                        drawBlock(x, y, value);
+                    }
+                });
+            });
+        }
+
+        function drawPiece() {
+            currentPiece.shape.forEach((row, y) => {
+                row.forEach((value, x) => {
+                    if (value) {
+                        drawBlock(currentPosition.x + x, currentPosition.y + y, currentPiece.color);
+                    }
+                });
+            });
+        }
+
+        function moveLeft() {
+            currentPosition.x--;
+            if (collision()) {
+                currentPosition.x++;
+            }
+        }
+
+        function moveRight() {
+            currentPosition.x++;
+            if (collision()) {
+                currentPosition.x--;
+            }
+        }
+
+        function moveDown() {
+            currentPosition.y++;
+            if (collision()) {
+                currentPosition.y--;
+                mergePiece();
+                clearLines();
+                resetPiece();
+                if (collision()) {
+                    // Game over
+                    alert('Game Over!');
+                    board = Array(ROWS).fill().map(() => Array(COLS).fill(0));
+                }
+            }
+        }
+
+        function rotate() {
+            const rotated = currentPiece.shape[0].map((_, index) =>
+                currentPiece.shape.map(row => row[index]).reverse()
+            );
+            const previousShape = currentPiece.shape;
+            currentPiece.shape = rotated;
+            if (collision()) {
+                currentPiece.shape = previousShape;
+            }
+        }
+
+        function collision() {
+            return currentPiece.shape.some((row, dy) =>
+                row.some((value, dx) =>
+                    value &&
+                    (board[currentPosition.y + dy] &&
+                    board[currentPosition.y + dy][currentPosition.x + dx]) !== 0 ||
+                    currentPosition.x + dx < 0 ||
+                    currentPosition.x + dx >= COLS ||
+                    currentPosition.y + dy >= ROWS
+                )
+            );
+        }
+
+        function mergePiece() {
+            currentPiece.shape.forEach((row, y) => {
+                row.forEach((value, x) => {
+                    if (value) {
+                        board[currentPosition.y + y][currentPosition.x + x] = currentPiece.color;
+                    }
+                });
+            });
+        }
+
+        function clearLines() {
+            let linesCleared = 0;
+            board = board.reduce((acc, row) => {
+                if (row.every(cell => cell !== 0)) {
+                    linesCleared++;
+                    acc.unshift(Array(COLS).fill(0));
+                } else {
+                    acc.push(row);
+                }
+                return acc;
+            }, []);
+
+            // You can add scoring logic here based on linesCleared
+        }
+
+        function resetPiece() {
+            currentPiece = createPiece();
+            currentPosition = { x: Math.floor(COLS / 2) - 1, y: 0 };
+        }
+
+        function gameLoop() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawBoard();
+            drawPiece();
+            requestAnimationFrame(gameLoop);
+        }
+
+        resetPiece();
+        gameLoop();
+
+        // Control buttons
+        document.getElementById('leftBtn').addEventListener('click', moveLeft);
+        document.getElementById('rightBtn').addEventListener('click', moveRight);
+        document.getElementById('downBtn').addEventListener('click', moveDown);
+        document.getElementById('rotateBtn').addEventListener('click', rotate);
+
+        // Continuous downward movement
+        setInterval(moveDown, 1000);
+    </script>
+</body>
+</html>
