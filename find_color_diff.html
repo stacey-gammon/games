@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Color Difference Game vs Robot</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: #f0f0f0;
+        }
+        #game-container {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 10px;
+            margin-top: 20px;
+        }
+        .block {
+            width: 80px;
+            height: 80px;
+            border: 1px solid #000;
+            cursor: pointer;
+        }
+        #timer, #level, #score, #robot-score {
+            font-size: 24px;
+            margin: 10px 0;
+        }
+        #start-button {
+            font-size: 18px;
+            margin-top: 20px;
+            padding: 10px 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Color Difference Game vs Robot</h1>
+    <div id="timer">Time: 60s</div>
+    <div id="level">Level: 1</div>
+    <div id="score">Your Score: 0</div>
+    <div id="robot-score">Robot Score: 0</div>
+    <div id="game-container"></div>
+    <button id="start-button">Start Game</button>
+
+    <script>
+        const gameContainer = document.getElementById('game-container');
+        const timerDisplay = document.getElementById('timer');
+        const levelDisplay = document.getElementById('level');
+        const scoreDisplay = document.getElementById('score');
+        const robotScoreDisplay = document.getElementById('robot-score');
+        const startButton = document.getElementById('start-button');
+
+        let timer;
+        let timeLeft;
+        let currentLevel = 1;
+        let score = 0;
+        let robotScore = 0;
+        let differentBlockIndex;
+        let robotTimer;
+
+        function startGame() {
+            currentLevel = 1;
+            score = 0;
+            robotScore = 0;
+            updateLevel();
+            updateScore();
+            updateRobotScore();
+            startLevel();
+        }
+
+        function startLevel() {
+            clearInterval(timer);
+            clearTimeout(robotTimer);
+            timeLeft = 60;
+            updateTimer();
+
+            gameContainer.innerHTML = '';
+            const baseColor = getRandomColor();
+            const differentColor = getSlightlyLighterColor(baseColor);
+            differentBlockIndex = Math.floor(Math.random() * 20);
+
+            for (let i = 0; i < 20; i++) {
+                const block = document.createElement('div');
+                block.className = 'block';
+                block.style.backgroundColor = i === differentBlockIndex ? differentColor : baseColor;
+                block.addEventListener('click', () => checkBlock(i));
+                gameContainer.appendChild(block);
+            }
+
+            timer = setInterval(() => {
+                timeLeft--;
+                updateTimer();
+                if (timeLeft <= 0) {
+                    clearInterval(timer);
+                    endGame();
+                }
+            }, 1000);
+
+            // Robot player
+            const robotDelay = Math.max(1000, 10000 - currentLevel * 150); // Robot gets faster as levels progress
+            robotTimer = setTimeout(() => {
+                robotGuess();
+            }, robotDelay);
+        }
+
+        function checkBlock(index) {
+            clearTimeout(robotTimer);
+            if (index === differentBlockIndex) {
+                score++;
+                updateScore();
+                nextLevel();
+            } else {
+                const block = gameContainer.children[index];
+                block.style.backgroundColor = getDarkerColor(block.style.backgroundColor);
+            }
+        }
+
+        function robotGuess() {
+            const robotAccuracy = Math.min(0.95, 0.5 + currentLevel * 0.01); // Robot gets more accurate as levels progress
+            if (Math.random() < robotAccuracy) {
+                robotScore++;
+                updateRobotScore();
+                nextLevel();
+            } else {
+                const wrongIndex = (differentBlockIndex + Math.floor(Math.random() * 19) + 1) % 20;
+                const block = gameContainer.children[wrongIndex];
+                block.style.backgroundColor = getDarkerColor(block.style.backgroundColor);
+                const robotDelay = Math.max(1000, 5000 - currentLevel * 75);
+                robotTimer = setTimeout(() => {
+                    robotGuess();
+                }, robotDelay);
+            }
+        }
+
+        function nextLevel() {
+            currentLevel++;
+            if (currentLevel > 50) {
+                endGame(true);
+            } else {
+                updateLevel();
+                startLevel();
+            }
+        }
+
+        function updateTimer() {
+            timerDisplay.textContent = `Time: ${timeLeft}s`;
+        }
+
+        function updateLevel() {
+            levelDisplay.textContent = `Level: ${currentLevel}`;
+        }
+
+        function updateScore() {
+            scoreDisplay.textContent = `Your Score: ${score}`;
+        }
+
+        function updateRobotScore() {
+            robotScoreDisplay.textContent = `Robot Score: ${robotScore}`;
+        }
+
+        function endGame(completed = false) {
+            clearInterval(timer);
+            clearTimeout(robotTimer);
+            if (completed) {
+                if (score > robotScore) {
+                    alert(`Congratulations! You've won! Your score: ${score}, Robot score: ${robotScore}`);
+                } else if (score < robotScore) {
+                    alert(`Game over! The robot won. Your score: ${score}, Robot score: ${robotScore}`);
+                } else {
+                    alert(`It's a tie! Your score: ${score}, Robot score: ${robotScore}`);
+                }
+            } else {
+                alert(`Time's up! Your final score: ${score}, Robot score: ${robotScore}`);
+            }
+            startButton.disabled = false;
+        }
+
+        function getRandomColor() {
+            const letters = '0123456789ABCDEF';
+            let color = '#';
+            for (let i = 0; i < 6; i++) {
+                color += letters[Math.floor(Math.random() * 16)];
+            }
+            return color;
+        }
+
+        function getSlightlyLighterColor(color) {
+            const rgb = parseInt(color.slice(1), 16);
+            const r = (rgb >> 16) & 255;
+            const g = (rgb >> 8) & 255;
+            const b = rgb & 255;
+
+            const lightenFactor = 1 + Math.max(0.02, 0.1 - currentLevel * 0.001); // Decrease the difference as levels progress
+            const newR = Math.min(255, Math.round(r * lightenFactor));
+            const newG = Math.min(255, Math.round(g * lightenFactor));
+            const newB = Math.min(255, Math.round(b * lightenFactor));
+
+            return `#${newR.toString(16).padStart(2, '0')}${newG.toString(16).padStart(2, '0')}${newB.toString(16).padStart(2, '0')}`;
+        }
+
+        function getDarkerColor(color) {
+            const rgb = parseInt(color.slice(1), 16);
+            const r = (rgb >> 16) & 255;
+            const g = (rgb >> 8) & 255;
+            const b = rgb & 255;
+
+            const darkenFactor = 0.9;
+            const newR = Math.round(r * darkenFactor);
+            const newG = Math.round(g * darkenFactor);
+            const newB = Math.round(b * darkenFactor);
+
+            return `#${newR.toString(16).padStart(2, '0')}${newG.toString(16).padStart(2, '0')}${newB.toString(16).padStart(2, '0')}`;
+        }
+
+        startButton.addEventListener('click', () => {
+            startButton.disabled = true;
+            startGame();
+        });
+    </script>
+</body>
+</html>
